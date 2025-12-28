@@ -1,0 +1,178 @@
+*check-this.txt*             Inline reliability heuristics for Neovim (Tree-sitter + Go)
+
+Author: barthollomew
+License: MIT
+
+==============================================================================
+CONTENTS
+
+  Introduction                      |check-this-intro|
+  Quick start                       |check-this-quick|
+  CLI                               |check-this-cli|
+  Rules                             |check-this-rules|
+  Configuration                     |check-this-config|
+  Diagnostics and JSON              |check-this-diagnostics|
+  Failure handling                  |check-this-failures|
+  Troubleshooting                   |check-this-troubleshoot|
+  Design notes                      |check-this-design|
+
+==============================================================================
+INTRODUCTION                                                   *check-this-intro*
+
+check-this.nvim pairs a Go analyzer with a Lua plugin to surface “bad default”
+risk patterns directly in Neovim. It favors speed and clear explanations over
+deep correctness. Tree-sitter provides a consistent AST for Python and JS/TS.
+
+==============================================================================
+QUICK START                                                   *check-this-quick*
+
+Install plugin (lazy.nvim):
+>lua
+  {
+    "barthollomew/check-this.nvim",
+    config = function()
+      require("check-this").setup()
+    end,
+  }
+<
+
+Build analyzer (CGO required):
+>sh
+  cd analyzer
+  CGO_ENABLED=1 go build -o check-this ./cmd/check-this
+<
+Put the binary on PATH (Windows: check-this.exe) or set |check-this-config|.
+
+Usage in Neovim:
+  :CheckThisAnalyze           Analyze current buffer
+  (optional) run on save when enabled in setup
+
+==============================================================================
+CLI                                                            *check-this-cli*
+
+>sh
+  check-this analyze [--path <file>] [--lang <lang>] [--format json] [--config <path>]
+<
+
+- Input: stdin (preferred for unsaved buffers). `--path` sets display name and
+  helps language inference. `--lang` overrides detection.
+- Output: JSON envelope (see |check-this-diagnostics|).
+- Exit codes: 0 on success (even with diagnostics); nonzero for usage/errors.
+
+==============================================================================
+RULES                                                          *check-this-rules*
+
+Each rule is heuristic and advisory:
+
+retry.unbounded~
+  Detects infinite/retry loops without caps or backoff.
+  Why: unbounded retries amplify outages.
+  Suppress: `check-this: disable=retry.unbounded`
+
+net.no_timeout~
+  Network calls without timeouts/AbortController/timeout option.
+  Why: hanging requests block threads during failures.
+  Suppress: `check-this: disable=net.no_timeout`
+
+errors.swallowed~
+  Empty catch/except blocks or pass-only handlers.
+  Why: hides failures; incidents go unseen.
+  Suppress: `check-this: disable=errors.swallowed`
+
+state.global_mutable~
+  Module-level mutable objects (lists, dicts, arrays) treated as globals.
+  Why: hidden shared state and coupling.
+  Suppress: `check-this: disable=state.global_mutable`
+
+==============================================================================
+CONFIGURATION                                               *check-this-config*
+
+Lua setup keys:
+
+  analyzer_path   Path to the built analyzer binary (default: "check-this").
+  debounce_ms     Debounce for autosave runs (default: 500).
+  run_on_save     Boolean to analyze on BufWritePost (default: true).
+  severity        Map of rule_id -> vim.diagnostic.severity override.
+  rules           Map of rule_id -> { enabled = bool } to toggle rules.
+  filetypes       List of filetypes to analyze (default: python, javascript, typescript).
+
+Example:
+>lua
+  require("check-this").setup({
+    analyzer_path = "check-this",
+    run_on_save = true,
+    debounce_ms = 500,
+    severity = {
+      ["net.no_timeout"] = vim.diagnostic.severity.INFO,
+    },
+    rules = {
+      ["state.global_mutable"] = { enabled = false },
+    },
+  })
+<
+
+==============================================================================
+DIAGNOSTICS AND JSON                                    *check-this-diagnostics*
+
+Analyzer output schema (versioned, 0-based ranges):
+>json
+{
+  "version": "1.0",
+  "path": "optional-file-name",
+  "language": "python",
+  "diagnostics": [
+    {
+      "rule_id": "errors.swallowed",
+      "severity": "warning",
+      "message": "Exception handled but nothing done",
+      "explanation": "Swallowing exceptions makes outages harder to detect; log or re-raise instead.",
+      "range": { "start": { "line": 2, "col": 0 }, "end": { "line": 3, "col": 8 } },
+      "tags": ["reliability", "errors"]
+    }
+  ],
+  "stats": { "parse_ms": 0, "analyze_ms": 0, "rules_run": 4 }
+}
+<
+
+Lua plugin maps severities to |vim.diagnostic| and keeps a dedicated namespace
+`check-this`. Re-runs replace prior diagnostics; clearing happens automatically
+when no findings remain.
+
+==============================================================================
+FAILURE HANDLING                                           *check-this-failures*
+
+- Analyzer missing or nonzero exit: emits an internal diagnostic at top of the
+  buffer and shows the error via |vim.notify|.
+- Invalid JSON: reported via |vim.notify|; diagnostics are not updated.
+- Parse errors: analyzer emits a synthetic `internal.parse_error` diagnostic
+  where possible instead of crashing.
+
+==============================================================================
+TROUBLESHOOTING                                     *check-this-troubleshoot*
+
+No diagnostics appear~
+  - Ensure analyzer binary is on PATH or set |check-this-config|.
+  - Confirm filetype is supported (python, javascript, typescript).
+  - Run :CheckThisAnalyze and inspect :messages.
+
+Analyzer too slow~
+  - Raise debounce_ms.
+  - Disable noisy rules you do not need.
+
+False positives~
+  - Lower severity per rule or disable temporarily.
+  - Suppress locally with `check-this: disable=<rule>`.
+
+Windows notes~
+  - Build with `CGO_ENABLED=1` and an MSYS2/MinGW compiler.
+  - Analyzer binary is `check-this.exe`; set analyzer_path accordingly.
+
+==============================================================================
+DESIGN NOTES                                               *check-this-design*
+
+- Heuristic by choice: prioritizes quick, explainable signals over exhaustive
+  analysis. False positives are acceptable.
+- Editor-native feedback: diagnostics live in `vim.diagnostic` with async
+  execution and debouncing to avoid UI stalls.
+- Single-binary analyzer: Go + Tree-sitter for consistent parsing across
+  languages, with a stable JSON contract for automation and tests.
