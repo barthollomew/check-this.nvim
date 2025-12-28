@@ -12,7 +12,7 @@ check-this.nvim is a Neovim plugin backed by a Go analyzer that surfaces operati
 - **Plugin (lazy.nvim)**
   ```lua
   {
-    "check-this/check-this.nvim",
+    "barthollomew/check-this.nvim",
     config = function()
       require("check-this").setup()
     end,
