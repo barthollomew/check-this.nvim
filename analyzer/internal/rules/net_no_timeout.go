@@ -9,7 +9,7 @@ import (
 
 type NetNoTimeout struct{}
 
-// NewNetNoTimeout constructs the rule.
+// newnetnotimeout builds rule.
 func NewNetNoTimeout() Rule { return NetNoTimeout{} }
 
 func (NetNoTimeout) ID() string { return "net.no_timeout" }
@@ -138,7 +138,7 @@ func hasKeywordArgument(call *sitter.Node, name string, source []byte) bool {
 			if id != nil && strings.TrimSpace(content(source, id)) == name {
 				return true
 			}
-			// fallback to textual check
+			// fallback to text check
 			if strings.HasPrefix(strings.TrimSpace(content(source, arg)), name) {
 				return true
 			}

@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,12 +11,12 @@ import (
 	"github.com/barthollomew/check-this.nvim/analyzer/internal/ts"
 )
 
-// Engine coordinates parsing, rule execution, and suppression handling.
+// engine runs parse, rules, suppressions.
 type Engine struct {
 	rules []rules.Rule
 }
 
-// NewEngine returns an Engine populated with the default ruleset.
+// newengine builds default ruleset.
 func NewEngine() Engine {
 	return Engine{
 		rules: []rules.Rule{
@@ -29,7 +28,7 @@ func NewEngine() Engine {
 	}
 }
 
-// AnalyzeInput captures the request to analyze a source buffer.
+// analyzeinput holds analyze request.
 type AnalyzeInput struct {
 	Path    string
 	Source  []byte
@@ -38,7 +37,7 @@ type AnalyzeInput struct {
 	Version string
 }
 
-// Analyze runs the enabled rules and returns a JSON-friendly output envelope.
+// analyze runs rules and returns output.
 func (e Engine) Analyze(input AnalyzeInput) (diagnostic.Output, error) {
 	if strings.TrimSpace(string(input.Source)) == "" {
 		return diagnostic.Output{
@@ -115,8 +114,9 @@ func (e Engine) Analyze(input AnalyzeInput) (diagnostic.Output, error) {
 				d.RuleID = rule.ID()
 			}
 			if d.Severity == "" {
-				d.Severity = input.Config.RuleSeverity(rule.ID(), rule.Meta().DefaultSeverity)
+				d.Severity = rule.Meta().DefaultSeverity
 			}
+			d.Severity = input.Config.RuleSeverity(rule.ID(), d.Severity)
 			if len(d.Tags) == 0 {
 				d.Tags = rule.Meta().Tags
 			}
@@ -142,7 +142,7 @@ func shouldSuppress(s map[string]map[int]struct{}, d diagnostic.Diagnostic) bool
 		if _, exists := lines[d.Range.Start.Line]; exists {
 			return true
 		}
-		// Presence of the rule in the map indicates a file-wide disable as well.
+		// rule in map also means file-wide disable.
 		if _, exists := lines[-1]; exists {
 			return true
 		}
@@ -168,7 +168,7 @@ func collectSuppressions(source []byte) map[string]map[int]struct{} {
 				out[ruleID] = map[int]struct{}{}
 			}
 			out[ruleID][i] = struct{}{}
-			// Sentinel -1 marks a file-wide suppression.
+			// -1 marks file-wide suppression.
 			out[ruleID][-1] = struct{}{}
 		}
 	}
@@ -182,13 +182,10 @@ func versionOrDefault(v string) string {
 	return v
 }
 
-// ValidateInput ensures the request contains the minimum fields needed.
+// validateinput checks required fields.
 func ValidateInput(input AnalyzeInput) error {
-	if len(input.Source) == 0 {
-		return errors.New("source is empty")
-	}
 	if input.Lang == "" {
-		return errors.New("language is required")
+		return fmt.Errorf("language is required")
 	}
 	if !ts.Supported(input.Lang) {
 		return fmt.Errorf("language %s not supported", input.Lang)
