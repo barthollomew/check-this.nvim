@@ -19,7 +19,7 @@ CONTENTS
 ==============================================================================
 INTRODUCTION                                                   *check-this-intro*
 
-check-this.nvim pairs a Go analyzer with a Lua plugin to surface “bad default”
+check-this.nvim pairs a Go analyzer with a Lua plugin to surface bad default
 risk patterns directly in Neovim. It favors speed and clear explanations over
 deep correctness. Tree-sitter provides a consistent AST for Python and JS/TS.
 
