@@ -2,6 +2,7 @@ local M = {}
 
 M.defaults = {
   analyzer_path = "check-this",
+  config_path = nil,
   debounce_ms = 500,
   run_on_save = true,
   severity = {},

@@ -4,6 +4,10 @@ local uv = vim.uv or vim.loop
 
 local M = {}
 local timers = {}
+local config_cache = {
+  path = nil,
+  payload = nil,
+}
 
 local function buf_text(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
@@ -35,6 +39,31 @@ local function decode_json(payload)
     return nil, decoded
   end
   return decoded, nil
+end
+
+local function resolve_config_path(opts)
+  if opts.config_path and opts.config_path ~= "" then
+    return opts.config_path, nil
+  end
+  if not opts.rules or next(opts.rules) == nil then
+    return nil, nil
+  end
+  local payload = vim.json.encode({ rules = opts.rules })
+  if config_cache.payload == payload and config_cache.path then
+    return config_cache.path, nil
+  end
+  local dir = vim.fn.stdpath("cache")
+  if vim.fn.isdirectory(dir) == 0 then
+    vim.fn.mkdir(dir, "p")
+  end
+  local path = dir .. "/check-this-config.json"
+  local ok, res = pcall(vim.fn.writefile, { payload }, path)
+  if not ok or res ~= 0 then
+    return nil, "failed to write analyzer config"
+  end
+  config_cache.path = path
+  config_cache.payload = payload
+  return path, nil
 end
 
 local function run_system(cmd, stdin, cb)
@@ -91,7 +120,7 @@ end
 local function build_cmd(bufnr, opts)
   local path = vim.api.nvim_buf_get_name(bufnr)
   local lang = vim.bo[bufnr].filetype
-  return {
+  local cmd = {
     opts.analyzer_path or "check-this",
     "analyze",
     "--path",
@@ -101,6 +130,15 @@ local function build_cmd(bufnr, opts)
     "--format",
     "json",
   }
+  local cfg_path, err = resolve_config_path(opts)
+  if err then
+    return nil, err
+  end
+  if cfg_path and cfg_path ~= "" then
+    table.insert(cmd, "--config")
+    table.insert(cmd, cfg_path)
+  end
+  return cmd, nil
 end
 
 local function run_once(bufnr, opts)
@@ -112,7 +150,21 @@ local function run_once(bufnr, opts)
   if not text then
     return
   end
-  local cmd = build_cmd(bufnr, opts)
+  local cmd, err = build_cmd(bufnr, opts)
+  if err then
+    diagnostics.publish(bufnr, {
+      diagnostics = {
+        {
+          rule_id = "internal.analyzer_error",
+          severity = "error",
+          message = "check-this.nvim: analyzer error (see :messages)",
+          range = { start = { line = 0, col = 0 }, ["end"] = { line = 0, col = 1 } },
+        },
+      },
+    }, opts)
+    vim.notify(err, vim.log.levels.ERROR)
+    return
+  end
   local runner = vim.system and run_system or run_jobstart
   runner(cmd, text, function(output, err)
     vim.schedule(function()

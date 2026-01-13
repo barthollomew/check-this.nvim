@@ -1,4 +1,4 @@
--- Minimal init for headless testing.
+-- minimal init for headless testing.
 local root = vim.fn.getcwd()
 vim.opt.runtimepath:append(root)
 vim.opt.runtimepath:append(root .. "/tests")
