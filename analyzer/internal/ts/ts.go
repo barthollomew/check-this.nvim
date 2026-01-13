@@ -11,7 +11,7 @@ import (
 	tstypescript "github.com/smacker/go-tree-sitter/typescript/typescript"
 )
 
-// Language identifiers used across the analyzer.
+// language ids used by analyzer.
 const (
 	LangPython     = "python"
 	LangJavaScript = "javascript"
@@ -34,8 +34,7 @@ var extToLang = map[string]string{
 	".tsx": LangTypeScript,
 }
 
-// DetectLanguage attempts to determine the language based on explicit input or
-// file extension.
+// detect language from flag or extension.
 func DetectLanguage(langFlag, path string) string {
 	if langFlag != "" {
 		return strings.ToLower(langFlag)
@@ -47,7 +46,7 @@ func DetectLanguage(langFlag, path string) string {
 	return ""
 }
 
-// Parse parses the given source using the language parser.
+// parse source with language parser.
 func Parse(lang string, source []byte) (*sitter.Node, error) {
 	lang = strings.ToLower(lang)
 	langImpl, ok := languageMap[lang]
@@ -63,7 +62,7 @@ func Parse(lang string, source []byte) (*sitter.Node, error) {
 	return tree.RootNode(), nil
 }
 
-// Supported reports whether the language is available.
+// supported reports if language is available.
 func Supported(lang string) bool {
 	_, ok := languageMap[strings.ToLower(lang)]
 	return ok

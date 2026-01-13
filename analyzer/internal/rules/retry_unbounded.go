@@ -9,7 +9,7 @@ import (
 
 type RetryUnbounded struct{}
 
-// NewRetryUnbounded constructs the rule.
+// newretryunbounded builds rule.
 func NewRetryUnbounded() Rule { return RetryUnbounded{} }
 
 func (RetryUnbounded) ID() string { return "retry.unbounded" }
@@ -127,7 +127,7 @@ func hasBackoff(body *sitter.Node, source []byte) bool {
 			}
 		}
 		if n.Type() == "break_statement" || n.Type() == "return_statement" {
-			// break/return typically bound the loop.
+			// break/return usually bound the loop.
 			found = true
 			return
 		}
@@ -146,7 +146,7 @@ func isInfiniteLoop(n *sitter.Node, source []byte) bool {
 		condText := strings.TrimSpace(strings.ToLower(content(source, cond)))
 		return condText == "true"
 	case "for_statement":
-		// for(;;) in JS has nil condition
+		// for(;;) in js has nil condition
 		cond := n.ChildByFieldName("condition")
 		return cond == nil || strings.TrimSpace(content(source, cond)) == ""
 	default:

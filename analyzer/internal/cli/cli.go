@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,8 +13,8 @@ import (
 	"github.com/barthollomew/check-this.nvim/analyzer/internal/ts"
 )
 
-// Run executes the CLI and writes JSON output to stdout. It returns the exit
-// code that should be used by main.
+// run executes cli and writes json output.
+// returns exit code for main.
 func Run(args []string, stdin []byte) (int, error) {
 	if len(args) == 0 {
 		return usageError("missing command")
@@ -29,11 +30,15 @@ func Run(args []string, stdin []byte) (int, error) {
 		if lang == "" {
 			lang = ts.DetectLanguage("", opts.Path)
 		}
+		cfg, err := loadConfig(opts.ConfigPath)
+		if err != nil {
+			return usageError(err.Error())
+		}
 		request := engine.AnalyzeInput{
 			Path:    opts.Path,
 			Lang:    lang,
 			Source:  stdin,
-			Config:  config.Config{},
+			Config:  cfg,
 			Version: "1.0",
 		}
 		if err := engine.ValidateInput(request); err != nil {
@@ -80,4 +85,22 @@ func parseAnalyzeFlags(args []string) (analyzeFlags, error) {
 
 func usageError(msg string) (int, error) {
 	return 2, fmt.Errorf("usage error: %s", strings.TrimSpace(msg))
+}
+
+func loadConfig(path string) (config.Config, error) {
+	if strings.TrimSpace(path) == "" {
+		return config.Config{}, nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return config.Config{}, fmt.Errorf("read config: %w", err)
+	}
+	if len(bytes.TrimSpace(data)) == 0 {
+		return config.Config{}, nil
+	}
+	var cfg config.Config
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return config.Config{}, fmt.Errorf("parse config: %w", err)
+	}
+	return cfg, nil
 }

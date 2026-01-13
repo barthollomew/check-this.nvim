@@ -5,7 +5,7 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-// Meta provides metadata about a rule.
+// meta holds rule info.
 type Meta struct {
 	DefaultSeverity string
 	Tags            []string
@@ -13,14 +13,14 @@ type Meta struct {
 	Long            string
 }
 
-// Context contains the data a rule needs to perform analysis.
+// context holds rule input.
 type Context struct {
 	Language string
 	Root     *sitter.Node
 	Source   []byte
 }
 
-// Rule represents a single analysis rule.
+// rule is one check.
 type Rule interface {
 	ID() string
 	Meta() Meta
@@ -28,7 +28,7 @@ type Rule interface {
 	Run(ctx Context) ([]diagnostic.Diagnostic, error)
 }
 
-// content returns the string for a node, guarding against nil.
+// content returns node text, nil-safe.
 func content(source []byte, n *sitter.Node) string {
 	if n == nil {
 		return ""
