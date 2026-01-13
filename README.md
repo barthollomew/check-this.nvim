@@ -1,6 +1,8 @@
 ## check-this.nvim
 
-Lightweight risk checks for Neovim. check-this.nvim runs a small Go analyzer that spots “bad defaults” (missing timeouts, unbounded retries, swallowed errors, risky globals) and shows inline diagnostics. Fast, explainable, and intentionally heuristic.
+Small, opinionated risk checks for Neovim.
+
+check-this.nvim runs a tiny Go analyzer over your buffer and flags things that might bite later. Missing timeouts, infinite retries, swallowed errors, sketchy globals. It is fast, readable, and deliberately heuristic. This is not formal verification
 
 ### Quick install
 
@@ -13,28 +15,37 @@ Lightweight risk checks for Neovim. check-this.nvim runs a small Go analyzer tha
     end,
   }
   ```
+
 - Analyzer binary
   ```sh
   cd analyzer
-  # Tree-sitter needs CGO; use gcc/clang on macOS/Linux, MSYS2/MinGW on Windows.
+  # Tree-sitter requires CGO.
+  # macOS/Linux: gcc or clang
+  # Windows: MSYS2 / MinGW
   CGO_ENABLED=1 go build -o check-this ./cmd/check-this
   ```
-  Put the binary on `PATH` (Windows: `check-this.exe`) or set `analyzer_path` in setup.
+
+  Put the binary on your `PATH` (Windows: `check-this.exe`), or point to it with `analyzer_path`.
 
 ### Quick usage
 
-- In Neovim: open a Python or JS/TS file and run `:CheckThisAnalyze`. Diagnostics appear inline with explanations.
+- In Neovim: open a Python or JS/TS file and run `:CheckThisAnalyze`. Diagnostics show inline with a short explanation.
 - CLI smoke test:
   ```sh
   printf "try:\n    risky()\nexcept Exception:\n    pass\n" | ./analyzer/check-this analyze --lang python
   ```
 
-### What you get
+### What it does
 
-- Async analysis driven by Tree-sitter; works on unsaved buffers (stdin).
-- Rules: `retry.unbounded`, `net.no_timeout`, `errors.swallowed`, `state.global_mutable`.
-- Debounced run on save; manual command available.
-- JSON output contract for scripting and tests.
+- Runs asynchronously using Tree-sitter.
+- Works on unsaved buffers via stdin.
+- Current rules:
+  - `retry.unbounded`
+  - `net.no_timeout`
+  - `errors.swallowed`
+  - `state.global_mutable`
+- Debounced on save, with a manual command when you want it.
+- Stable JSON output for scripting and tests.
 
 ### Configuration (minimal)
 
@@ -53,10 +64,10 @@ require("check-this").setup({
 })
 ```
 
-### Need more detail?
+### More details
 
-See `doc/check-this.txt` for deeper documentation:
-- Full CLI flags and JSON schema
-- Rule heuristics and suppression directives
-- Failure handling, platform notes, and troubleshooting
-- Design philosophy and limitations
+See `doc/check-this.txt` for:
+- CLI flags and JSON schema
+- Rule heuristics and suppression comments
+- Platform notes and failure modes
+- Design goals and known limitations
