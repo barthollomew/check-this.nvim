@@ -36,6 +36,7 @@ var extToLang = map[string]string{
 
 // detect language from flag or extension.
 func DetectLanguage(langFlag, path string) string {
+	langFlag = strings.TrimSpace(langFlag)
 	if langFlag != "" {
 		return strings.ToLower(langFlag)
 	}

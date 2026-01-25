@@ -26,10 +26,7 @@ func Run(args []string, stdin []byte) (int, error) {
 		if err != nil {
 			return usageError(err.Error())
 		}
-		lang := opts.Lang
-		if lang == "" {
-			lang = ts.DetectLanguage("", opts.Path)
-		}
+		lang := ts.DetectLanguage(opts.Lang, opts.Path)
 		cfg, err := loadConfig(opts.ConfigPath)
 		if err != nil {
 			return usageError(err.Error())
