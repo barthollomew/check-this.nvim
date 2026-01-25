@@ -32,11 +32,12 @@ local function explain_under_cursor(bufnr)
 end
 
 local function setup_autocmds()
+  local group = vim.api.nvim_create_augroup("CheckThisAuto", { clear = true })
   if not M._opts.run_on_save then
     return
   end
   vim.api.nvim_create_autocmd("BufWritePost", {
-    group = vim.api.nvim_create_augroup("CheckThisAuto", { clear = true }),
+    group = group,
     callback = function(args)
       runner.run_debounced(args.buf, M._opts)
     end,
