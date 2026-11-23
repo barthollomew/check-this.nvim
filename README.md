@@ -1,8 +1,31 @@
 ## check-this.nvim
 
-Small and fast risk checks for Neovim.
+Most production outages come from boring mistakes that linters ignore: an HTTP call with no timeout, a `while True` retry loop with no backoff, or an `except Exception: pass` block that hides a crash.
 
-check-this.nvim runs a small Go analyzer over your code. It flags things that can fail later. Missing timeouts, infinite retries, swallowed errors, and bad globals. It is fast and simple.
+check-this.nvim is a fast Go analyzer and Neovim plugin. It catches these risky patterns instantly as you code.
+
+### Sample Output
+
+When you run `check-this analyze --lang python` on risky code, it outputs clean structured JSON:
+
+```json
+{
+  "version": "1.0",
+  "path": "stdin",
+  "language": "python",
+  "diagnostics": [
+    {
+      "rule_id": "errors.swallowed",
+      "severity": "warning",
+      "message": "Exception handled but nothing done",
+      "explanation": "Swallowing exceptions makes outages harder to detect; log or re-raise instead.",
+      "range": { "start": { "line": 2, "col": 0 }, "end": { "line": 3, "col": 8 } },
+      "tags": ["reliability", "errors"]
+    }
+  ],
+  "stats": { "parse_ms": 0, "analyze_ms": 0, "rules_run": 4 }
+}
+```
 
 ### Architecture
 
