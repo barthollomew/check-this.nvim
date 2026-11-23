@@ -2,3 +2,4 @@ analyzer/check-this
 analyzer/check-this.exe
 analyzer/check-this.*
 *.log
+CLAUDE.md
