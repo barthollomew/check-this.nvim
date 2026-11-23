@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "chore/portfolio-audit-upgrade" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y neovim gcc
+      - name: Test Analyzer
+        run: cd analyzer && CGO_ENABLED=1 go test -v ./... && CGO_ENABLED=1 go build -o check-this ./cmd/check-this
+      - name: Run Neovim Tests
+        run: nvim --headless -u tests/minimal_init.lua -c "lua require('tests.headless_spec').run()" -c "qa!"

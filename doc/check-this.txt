@@ -7,6 +7,8 @@ License: MIT
 CONTENTS
 
   Introduction                      |check-this-intro|
+  Architecture                      |check-this-arch|
+  Testing                           |check-this-testing|
   Quick start                       |check-this-quick|
   CLI                               |check-this-cli|
   Rules                             |check-this-rules|
@@ -22,6 +24,40 @@ INTRODUCTION                                                   *check-this-intro
 check-this.nvim pairs a Go analyzer with a Lua plugin to surface bad default
 risk patterns directly in Neovim. It favors speed and clear explanations over
 deep correctness. Tree-sitter provides a consistent AST for Python and JS/TS.
+
+==============================================================================
+ARCHITECTURE                                                   *check-this-arch*
+
+The plugin uses two main parts working together:
+
+1. Asynchronous Neovim Lua Runner
+   - Written in Lua using `vim.system` to run the analyzer process asynchronously.
+   - Pipes buffer contents via stdin so unsaved changes are checked instantly.
+   - Parses the JSON output from the analyzer and updates native Neovim diagnostics
+     in a dedicated `check-this` namespace using `vim.diagnostic`.
+   - Debounces checks on save to keep the editor responsive.
+
+2. CGO Tree-sitter Go AST Analyzer
+   - Built in Go using CGO and Tree-sitter for fast parsing of code.
+   - Evaluates specific heuristic rules:
+     - `retry.unbounded`: detects loops that retry without limits or backoff.
+     - `net.no_timeout`: detects network calls missing timeout options.
+     - `errors.swallowed`: detects empty catch or except blocks.
+     - `state.global_mutable`: detects module level mutable shared state.
+
+==============================================================================
+TESTING                                                        *check-this-testing*
+
+Testing is split into two layers:
+
+1. Analyzer Unit Tests
+   - Go unit tests covering AST rule matching, suppression comments, config
+     parsing, and language detection. Run with `go test -v ./...`.
+
+2. Headless Neovim Plugin Tests
+   - Integration tests running inside Neovim in headless mode via
+     `nvim --headless -u tests/minimal_init.lua`. These tests verify end-to-end
+     execution, stdin piping, JSON decoding, and diagnostic population.
 
 ==============================================================================
 QUICK START                                                   *check-this-quick*
