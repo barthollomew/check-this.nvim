@@ -1,18 +1,16 @@
 package diagnostic
 
-// position is a zero-based point in source.
+// Position holds zero-based source coordinates.
 type Position struct {
 	Line int `json:"line"`
 	Col  int `json:"col"`
 }
 
-// range is a span in source.
 type Range struct {
 	Start Position `json:"start"`
 	End   Position `json:"end"`
 }
 
-// diagnostic is one finding.
 type Diagnostic struct {
 	RuleID      string   `json:"rule_id"`
 	Severity    string   `json:"severity"`
@@ -23,14 +21,12 @@ type Diagnostic struct {
 	DocsURL     string   `json:"docs_url,omitempty"`
 }
 
-// stats holds runtime metrics.
 type Stats struct {
 	ParseMS   int `json:"parse_ms"`
 	AnalyzeMS int `json:"analyze_ms"`
 	RulesRun  int `json:"rules_run"`
 }
 
-// output is the json envelope.
 type Output struct {
 	Version     string       `json:"version"`
 	Path        string       `json:"path,omitempty"`

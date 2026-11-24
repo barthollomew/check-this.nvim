@@ -11,12 +11,10 @@ import (
 	"github.com/barthollomew/check-this.nvim/analyzer/internal/ts"
 )
 
-// engine runs parse, rules, suppressions.
 type Engine struct {
 	rules []rules.Rule
 }
 
-// newengine builds default ruleset.
 func NewEngine() Engine {
 	return Engine{
 		rules: []rules.Rule{
@@ -28,7 +26,6 @@ func NewEngine() Engine {
 	}
 }
 
-// analyzeinput holds analyze request.
 type AnalyzeInput struct {
 	Path    string
 	Source  []byte
@@ -37,7 +34,6 @@ type AnalyzeInput struct {
 	Version string
 }
 
-// analyze runs rules and returns output.
 func (e Engine) Analyze(input AnalyzeInput) (diagnostic.Output, error) {
 	if strings.TrimSpace(string(input.Source)) == "" {
 		return diagnostic.Output{
@@ -87,7 +83,7 @@ func (e Engine) Analyze(input AnalyzeInput) (diagnostic.Output, error) {
 			continue
 		}
 
-		diags, err := runRule(rule, rules.Context{
+		diags, err := rule.Run(rules.Context{
 			Language: input.Lang,
 			Root:     root,
 			Source:   input.Source,
@@ -126,14 +122,6 @@ func (e Engine) Analyze(input AnalyzeInput) (diagnostic.Output, error) {
 	}
 	out.Stats.AnalyzeMS = int(time.Since(analyzeStart).Milliseconds())
 	return out, nil
-}
-
-func runRule(rule rules.Rule, ctx rules.Context) ([]diagnostic.Diagnostic, error) {
-	diags, err := rule.Run(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return diags, nil
 }
 
 func shouldSuppress(s map[string]map[int]struct{}, d diagnostic.Diagnostic) bool {
@@ -182,7 +170,6 @@ func versionOrDefault(v string) string {
 	return v
 }
 
-// validateinput checks required fields.
 func ValidateInput(input AnalyzeInput) error {
 	if input.Lang == "" {
 		return fmt.Errorf("language is required")

@@ -9,7 +9,6 @@ import (
 
 type ErrorsSwallowed struct{}
 
-// newerrorsswallowed builds rule.
 func NewErrorsSwallowed() Rule { return ErrorsSwallowed{} }
 
 func (ErrorsSwallowed) ID() string { return "errors.swallowed" }

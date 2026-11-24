@@ -9,7 +9,6 @@ import (
 
 type StateGlobalMutable struct{}
 
-// newstateglobalmutable builds rule.
 func NewStateGlobalMutable() Rule { return StateGlobalMutable{} }
 
 func (StateGlobalMutable) ID() string { return "state.global_mutable" }

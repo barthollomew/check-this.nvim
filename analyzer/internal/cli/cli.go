@@ -13,8 +13,6 @@ import (
 	"github.com/barthollomew/check-this.nvim/analyzer/internal/ts"
 )
 
-// run executes cli and writes json output.
-// returns exit code for main.
 func Run(args []string, stdin []byte) (int, error) {
 	if len(args) == 0 {
 		return usageError("missing command")

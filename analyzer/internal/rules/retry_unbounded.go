@@ -9,7 +9,6 @@ import (
 
 type RetryUnbounded struct{}
 
-// newretryunbounded builds rule.
 func NewRetryUnbounded() Rule { return RetryUnbounded{} }
 
 func (RetryUnbounded) ID() string { return "retry.unbounded" }
