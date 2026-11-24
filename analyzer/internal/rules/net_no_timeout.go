@@ -9,7 +9,6 @@ import (
 
 type NetNoTimeout struct{}
 
-// newnetnotimeout builds rule.
 func NewNetNoTimeout() Rule { return NetNoTimeout{} }
 
 func (NetNoTimeout) ID() string { return "net.no_timeout" }

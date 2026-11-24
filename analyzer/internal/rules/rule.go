@@ -5,7 +5,6 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-// meta holds rule info.
 type Meta struct {
 	DefaultSeverity string
 	Tags            []string
@@ -13,14 +12,12 @@ type Meta struct {
 	Long            string
 }
 
-// context holds rule input.
 type Context struct {
 	Language string
 	Root     *sitter.Node
 	Source   []byte
 }
 
-// rule is one check.
 type Rule interface {
 	ID() string
 	Meta() Meta
@@ -28,7 +25,6 @@ type Rule interface {
 	Run(ctx Context) ([]diagnostic.Diagnostic, error)
 }
 
-// content returns node text, nil-safe.
 func content(source []byte, n *sitter.Node) string {
 	if n == nil {
 		return ""
